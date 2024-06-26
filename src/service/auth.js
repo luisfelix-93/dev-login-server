@@ -4,8 +4,8 @@ const createPasswordHash = async (password) => {
   return bcrypt.hash(password, 8);
 };
 
-const checkPassword = async (user, password) => {
-  return bcrypt.compare(password, user.password);
+const checkPassword = async (userName, password) => {
+  return bcrypt.compare(password, userName.password);
 };
 
 module.exports = {

@@ -1,43 +1,36 @@
 const jwt = require('jsonwebtoken');
-const {checkPassword} = require('../service/auth');
 const authConfig = require('../config/auth');
-const User = require('../models/User');
+const UserService = require('./UserService');
 const Session = require('../models/Session');
 
 class SessionService {
     async createSession(userName, password) {
-        const user = User.findOne({userName});
-        if (!user){ 
-            return ("user/password not found!");
+        const findUser = await UserService.getUserByUserName(userName, password);
+        
+        if (!findUser) {
+            return { error: 'User / password inválido' };
         }
 
-        if(!checkPassword(user, password)) {
-            return ("user/password not found!");
-        }
-
-        const idUser = user.id;
-        const dataAtual = new Date();
-        // Options for getting local information
         const opcoesLocais = { timeZone: 'America/Sao_Paulo', hour12: false };
+        const dataAtual = new Date();
+        // Formatting the date with local information
+       const formatoData = new Intl.DateTimeFormat('pt-BR', opcoesLocais);
+       const dateSession = formatoData.format(dataAtual);
 
-         // Formatting the date with local information
-        const formatoData = new Intl.DateTimeFormat('pt-BR', opcoesLocais);
-        const dateSession = formatoData.format(dataAtual);
+        const idUser = findUser.id;
+        
+        const token = jwt.sign({ idUser }, authConfig.secret, {
+            expiresIn: 3600
+        });
 
-        const token = jwt.sign(idUser, authConfig.secret, {
-        expiresIn: authConfig.expiresIn
-        })
-
-        let session = { 
+        const session = new Session({
             idUser,
-            nmUser: userName,
+            userName,
             token,
-            expiresIn: authConfig.expiresIn, 
-            dateSession
-        };
+            dtSession: dateSession
+        });
 
-        session = new Session(session);
-        await  session.save();
+        await session.save();
         return session;
     }
 }

@@ -6,8 +6,16 @@ class SessionController {
 
         try{
             const session = await sessionService.createSession(userName, password);
-            res.status(200).json(session);
+
+            if(session.error) {
+                return res.status(401).json(session.error);
+            }
+            return res.status(200).json({
+                message: 'Usuário autenticado com sucesso',
+                data: session 
+            });
         } catch (error) {
+            console.log(error)
             res.status(500).json({ error: error.message });
         }
     }
