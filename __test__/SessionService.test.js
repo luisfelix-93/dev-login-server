@@ -13,8 +13,7 @@ jest.mock('../src/service/UserService', () => {
     };
 });
 
-// Set Timeout
-jest.setTimeout(10000);
+
 
 const UserService = require('../src/service/UserService');
 const SessionController = require('../src/controllers/SessionController');
@@ -22,17 +21,19 @@ const SessionController = require('../src/controllers/SessionController');
 const app = express();
 app.use(bodyParser.json());
 app.post('/session', SessionController.create);
-
 beforeAll(async () => {
     const url = `mongodb://127.0.0.1/test_db`;
-    await mongoose.connect(url, { useNewUrlParser: true });
-});
+    await mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
+}, 30000); // 
+
 
 afterAll(async () => {
-    await mongoose.connection.db.dropDatabase();
-    await mongoose.connection.close();
-});
-
+    if (mongoose.connection && mongoose.connection.db) {
+        await mongoose.connection.db.dropDatabase();
+        await mongoose.connection.close();
+    }
+}, 30000); 
+// Test
 describe('SessionService', () => {
     it('should create a session and return token', async () => {
         const user = {
