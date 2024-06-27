@@ -1,4 +1,5 @@
 const request = require('supertest');
+const { MongoMemoryServer } = require("mongodb-memory-server");
 const mongoose = require('mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -15,24 +16,23 @@ jest.mock('../src/service/UserService', () => {
 
 
 
+
 const UserService = require('../src/service/UserService');
 const SessionController = require('../src/controllers/SessionController');
 
 const app = express();
 app.use(bodyParser.json());
 app.post('/session', SessionController.create);
+
+let mongoServer;
+
 beforeAll(async () => {
-    const url = `mongodb://127.0.0.1/test_db`;
-    await mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
-}, 30000); // 
-
-
-afterAll(async () => {
-    if (mongoose.connection && mongoose.connection.db) {
-        await mongoose.connection.db.dropDatabase();
-        await mongoose.connection.close();
-    }
+    mongoServer = await MongoMemoryServer.create();
+    const uri = mongoServer.getUri();
+    await mongoose.connect(uri);
 }, 30000); 
+
+
 // Test
 describe('SessionService', () => {
     it('should create a session and return token', async () => {
@@ -78,3 +78,8 @@ describe('SessionService', () => {
         expect(response.status).toBe(500);
     });
 });
+
+afterAll(async () => {
+    await mongoose.disconnect();
+    await mongoServer.stop();
+}, 30000); // Aumentando o timeout para 30 segundos
